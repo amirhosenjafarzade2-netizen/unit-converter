@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-# Custom CSS for improved UI
+# Custom CSS for improved UI with wider sidebar
 st.markdown("""
 <style>
     :root {
@@ -12,6 +12,13 @@ st.markdown("""
     .main {
         background-color: var(--background);
         font-family: 'Arial', sans-serif;
+    }
+    .stSidebar {
+        width: 350px !important;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
     }
     .stButton>button {
         background-color: var(--accent);
@@ -55,6 +62,9 @@ st.markdown("""
         border-left: 4px solid #ffc107;
     }
     @media (max-width: 600px) {
+        .stSidebar {
+            width: 300px !important;
+        }
         .stButton>button {
             font-size: 14px;
             padding: 8px 16px;
@@ -362,7 +372,7 @@ categories = [
     "Angle", "Conductivity / Resistivity", "Mud Weight", "Rate of Penetration (ROP)"
 ]
 
-# Sidebar inputs
+# Sidebar inputs (permanent, not hidable)
 st.sidebar.header("Conversion Inputs")
 category = st.sidebar.selectbox("Select Category", categories, key="category_select")
 
@@ -375,7 +385,7 @@ if category == "Thermal Properties":
     thermal_type = ["Heat Capacity", "Thermal Conductivity"]
     thermal_sub = st.sidebar.selectbox("Thermal Sub-Category", thermal_type)
 
-# Unit filtering
+# Unit filtering (in expander to keep sidebar clean)
 units = converter.get_units(category, thermal_sub)
 with st.sidebar.expander("Filter Units"):
     selected_units = st.multiselect("Select Units to Display", list(units.keys()), default=list(units.keys()), key="unit_filter")
@@ -396,7 +406,7 @@ else:
     to_unit = st.sidebar.selectbox("To Unit", selected_units, key="to_unit")
 value = st.sidebar.number_input("Value", value=0.0, key="value_input")
 
-# Special calculations
+# Special calculations (in expanders)
 if category == "Pressure":
     with st.sidebar.expander("Hydrostatic Pressure Calc (TVD * Mud Wt * 0.052)"):
         st.info("Pressure (psi) = TVD (ft) * Mud Weight (ppg) * 0.052")
