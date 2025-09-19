@@ -66,7 +66,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Unit definitions (kept inline for single module)
+# Unit definitions
 length_units = {
     "millimeter (mm)": 0.001,
     "centimeter (cm)": 0.01,
@@ -98,7 +98,7 @@ volume_units = {
     "acre-foot": 1233.48,
     "standard cubic foot (scf)": 0.0283168,
     "thousand standard cubic feet (mscf)": 28.3168,
-    "million standard cubic feet (mmscf)": 28316.8,
+    "million standard cubic feet (mmscfd)": 28316.8,
     "billion cubic feet (bcf)": 2.83168e7,
     "standard cubic meter (sm³)": 1
 }
@@ -362,6 +362,8 @@ categories = [
     "Angle", "Conductivity / Resistivity", "Mud Weight", "Rate of Penetration (ROP)"
 ]
 
+# Sidebar inputs
+st.sidebar.header("Conversion Inputs")
 category = st.sidebar.selectbox("Select Category", categories, key="category_select")
 
 # Initialize converter
@@ -380,20 +382,19 @@ with st.sidebar.expander("Filter Units"):
 if not selected_units:
     selected_units = list(units.keys())
 
-# Sidebar inputs
-with st.sidebar.expander("Conversion Inputs", expanded=True):
-    if category == "Temperature":
-        temp_units = ["Celsius (°C)", "Fahrenheit (°F)", "Kelvin (K)", "Rankine (°R)"]
-        from_unit = st.selectbox("From Unit", temp_units, key="from_unit")
-        to_unit = st.selectbox("To Unit", temp_units, key="to_unit")
-    elif category == "API Gravity and Specific Gravity":
-        grav_units = ["API Gravity (°API)", "Specific Gravity (SG at 60°F)"]
-        from_unit = st.selectbox("From Unit", grav_units, key="from_unit")
-        to_unit = st.selectbox("To Unit", grav_units, key="to_unit")
-    else:
-        from_unit = st.selectbox("From Unit", selected_units, key="from_unit")
-        to_unit = st.selectbox("To Unit", selected_units, key="to_unit")
-    value = st.number_input("Value", value=0.0, key="value_input")
+# Unit selection and value input (permanent, not in expander)
+if category == "Temperature":
+    temp_units = ["Celsius (°C)", "Fahrenheit (°F)", "Kelvin (K)", "Rankine (°R)"]
+    from_unit = st.sidebar.selectbox("From Unit", temp_units, key="from_unit")
+    to_unit = st.sidebar.selectbox("To Unit", temp_units, key="to_unit")
+elif category == "API Gravity and Specific Gravity":
+    grav_units = ["API Gravity (°API)", "Specific Gravity (SG at 60°F)"]
+    from_unit = st.sidebar.selectbox("From Unit", grav_units, key="from_unit")
+    to_unit = st.sidebar.selectbox("To Unit", grav_units, key="to_unit")
+else:
+    from_unit = st.sidebar.selectbox("From Unit", selected_units, key="from_unit")
+    to_unit = st.sidebar.selectbox("To Unit", selected_units, key="to_unit")
+value = st.sidebar.number_input("Value", value=0.0, key="value_input")
 
 # Special calculations
 if category == "Pressure":
