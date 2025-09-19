@@ -442,11 +442,11 @@ if st.session_state.get("convert_button"):
             st.info("Zero value converts to zero.")
         result = converter.convert(category, from_unit, to_unit, value, thermal_sub, pvt_correction)
         formula = "Same unit" if from_unit == to_unit else f"{value} × ({units.get(from_unit, 1)} / {units.get(to_unit, 1)}) × {pvt_correction:.4f}"
-        st.session_state.result = result
-        st.session_state.formula = formula
-        st.session_state.value = value
-        st.session_state.from_unit = from_unit
-        st.session_state.to_unit = to_unit
+        st.session_state.conversion_result = result
+        st.session_state.conversion_formula = formula
+        st.session_state.conversion_value = value
+        st.session_state.result_from_unit = from_unit
+        st.session_state.result_to_unit = to_unit
         st.markdown(f"<div class='result'>{value} {from_unit} = {result:.6f} {to_unit}</div>", unsafe_allow_html=True)
         st.info(f"Formula: {formula}")
     except ValueError as e:
