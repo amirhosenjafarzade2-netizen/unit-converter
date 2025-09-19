@@ -406,9 +406,12 @@ else:
     to_unit = st.sidebar.selectbox("To Unit", selected_units, key="to_unit")
 value = st.sidebar.number_input("Value", value=0.0, key="value_input")
 
+# Conversion button (permanent, not in expander)
+st.sidebar.button("Convert", key="convert_button")
+
 # Special calculations (in expanders)
 if category == "Pressure":
-    with st.sidebar.expander("Hydrostatic Pressure Calc (TVD * Mud Wt * 0.052)"):
+    with st.sidebar.expander("Hydrostatic Pressure Calc"):
         st.info("Pressure (psi) = TVD (ft) * Mud Weight (ppg) * 0.052")
         tvd = st.number_input("TVD (ft)", value=1000.0)
         mud_ppg = st.number_input("Mud Weight (ppg)", value=8.33)
@@ -433,12 +436,17 @@ else:
     pvt_correction = 1.0
 
 # Conversion logic
-if st.sidebar.button("Convert", key="convert_button"):
+if st.session_state.get("convert_button"):
     try:
         if value == 0:
             st.info("Zero value converts to zero.")
         result = converter.convert(category, from_unit, to_unit, value, thermal_sub, pvt_correction)
         formula = "Same unit" if from_unit == to_unit else f"{value} × ({units.get(from_unit, 1)} / {units.get(to_unit, 1)}) × {pvt_correction:.4f}"
+        st.session_state.result = result
+        st.session_state.formula = formula
+        st.session_state.value = value
+        st.session_state.from_unit = from_unit
+        st.session_state.to_unit = to_unit
         st.markdown(f"<div class='result'>{value} {from_unit} = {result:.6f} {to_unit}</div>", unsafe_allow_html=True)
         st.info(f"Formula: {formula}")
     except ValueError as e:
