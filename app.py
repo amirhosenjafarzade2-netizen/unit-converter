@@ -476,4 +476,3 @@ if st.sidebar.button("Reset", key="reset_button"):
     st.rerun()
 
 st.markdown("---")
-st.markdown("Enhanced for Petroleum Engineering | Built with ❤️")
