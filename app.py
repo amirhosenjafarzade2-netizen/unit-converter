@@ -608,10 +608,33 @@ categories = [
 with st.sidebar:
     st.header("⚙️ Conversion Settings")
     
+    # Handle favorite selection if requested
+    favorite_category = st.session_state.get('favorite_selected')
+    if favorite_category:
+        del st.session_state.favorite_selected
+    
+    # Handle reuse conversion if requested
+    reuse_category = None
+    reuse_value = None
+    if st.session_state.get('reuse_conversion'):
+        reuse_entry = st.session_state.reuse_conversion
+        reuse_category = reuse_entry['category']
+        reuse_value = reuse_entry['from_value']
+        del st.session_state.reuse_conversion
+    
+    # Determine default category (priority: favorite > reuse > default)
+    if favorite_category and favorite_category in categories:
+        default_category = categories.index(favorite_category)
+    elif reuse_category and reuse_category in categories:
+        default_category = categories.index(reuse_category)
+    else:
+        default_category = 0
+    
     # Category selection
     category = st.selectbox(
         "📊 Select Category",
         categories,
+        index=default_category,
         key="category_select",
         help="Choose the type of unit conversion you want to perform"
     )
@@ -626,27 +649,50 @@ with st.sidebar:
     
     st.markdown("---")
     
+    # Handle swap units if requested
+    swap_from = None
+    swap_to = None
+    if st.session_state.get('swap_units'):
+        swap_from = st.session_state.get('to_unit')
+        swap_to = st.session_state.get('from_unit')
+        st.session_state.swap_units = False
+    
     # Unit selection
     units = converter.get_units(category)
     
     if category == "Temperature":
         temp_units = ["Celsius (°C)", "Fahrenheit (°F)", "Kelvin (K)", "Rankine (°R)"]
-        from_unit = st.selectbox("🔵 From Unit", temp_units, key="from_unit")
-        to_unit = st.selectbox("🔴 To Unit", temp_units, key="to_unit")
+        default_from = temp_units.index(swap_from) if swap_from and swap_from in temp_units else 0
+        default_to = temp_units.index(swap_to) if swap_to and swap_to in temp_units else 1
+        from_unit = st.selectbox("🔵 From Unit", temp_units, index=default_from, key="from_unit")
+        to_unit = st.selectbox("🔴 To Unit", temp_units, index=default_to, key="to_unit")
     elif category == "API Gravity ↔ Specific Gravity":
         grav_units = ["API Gravity (°API)", "Specific Gravity (SG at 60°F)"]
-        from_unit = st.selectbox("🔵 From Unit", grav_units, key="from_unit")
-        to_unit = st.selectbox("🔴 To Unit", grav_units, key="to_unit")
+        default_from = grav_units.index(swap_from) if swap_from and swap_from in grav_units else 0
+        default_to = grav_units.index(swap_to) if swap_to and swap_to in grav_units else 1
+        from_unit = st.selectbox("🔵 From Unit", grav_units, index=default_from, key="from_unit")
+        to_unit = st.selectbox("🔴 To Unit", grav_units, index=default_to, key="to_unit")
     else:
         unit_list = list(units.keys())
-        from_unit = st.selectbox("🔵 From Unit", unit_list, key="from_unit")
-        to_unit = st.selectbox("🔴 To Unit", unit_list, key="to_unit")
+        default_from = unit_list.index(swap_from) if swap_from and swap_from in unit_list else 0
+        default_to = unit_list.index(swap_to) if swap_to and swap_to in unit_list else (1 if len(unit_list) > 1 else 0)
+        from_unit = st.selectbox("🔵 From Unit", unit_list, index=default_from, key="from_unit")
+        to_unit = st.selectbox("🔴 To Unit", unit_list, index=default_to, key="to_unit")
     
     # Value input with scientific notation support
     st.markdown("---")
+    
+    # Check if there's a multiplier value or reuse value to use
+    if reuse_value is not None:
+        default_value = reuse_value
+    else:
+        default_value = st.session_state.get('multiplier_value', 0.0)
+        if 'multiplier_value' in st.session_state:
+            del st.session_state.multiplier_value
+    
     value = st.number_input(
         "💯 Value",
-        value=0.0,
+        value=default_value,
         format="%.6f",
         key="value_input",
         help="Enter the value you want to convert"
@@ -657,15 +703,15 @@ with st.sidebar:
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("×10"):
-            st.session_state.value_input = value * 10
+            st.session_state.multiplier_value = value * 10
             st.rerun()
     with col2:
         if st.button("×100"):
-            st.session_state.value_input = value * 100
+            st.session_state.multiplier_value = value * 100
             st.rerun()
     with col3:
         if st.button("÷10"):
-            st.session_state.value_input = value / 10
+            st.session_state.multiplier_value = value / 10
             st.rerun()
     
     st.markdown("---")
@@ -675,10 +721,8 @@ with st.sidebar:
     
     # Swap units button
     if st.button("⇅ Swap Units", use_container_width=True):
-        # Swap from and to units
-        temp_from = from_unit
-        st.session_state.from_unit = to_unit
-        st.session_state.to_unit = temp_from
+        # Store swap instruction
+        st.session_state.swap_units = True
         st.rerun()
     
     # PVT Correction for GOR
@@ -861,8 +905,7 @@ with tab3:
                     st.markdown(f"`{entry['from_value']:.4g}` {entry['from_unit']} → `{entry['to_value']:.4g}` {entry['to_unit']}")
                 with col3:
                     if st.button("↺", key=f"reuse_{i}", help="Reuse this conversion"):
-                        st.session_state.category_select = entry['category']
-                        st.session_state.value_input = entry['from_value']
+                        st.session_state.reuse_conversion = entry
                         st.rerun()
                 st.markdown("---")
         
@@ -1005,7 +1048,7 @@ if st.session_state.favorites:
             col1, col2 = st.columns([4, 1])
             with col1:
                 if st.button(fav, key=f"fav_{fav}", use_container_width=True):
-                    st.session_state.category_select = fav
+                    st.session_state.favorite_selected = fav
                     st.rerun()
             with col2:
                 if st.button("✖", key=f"remove_{fav}", help="Remove from favorites"):
